@@ -46,6 +46,53 @@ $RepoRoot   = Split-Path -Parent $ScriptDir
 $BackendDir = Join-Path $RepoRoot 'backend'
 
 # ── Helper: check that a command exists ──────────────────────────────────────
+function Get-InstallManager {
+    if (Get-Command 'winget' -ErrorAction SilentlyContinue) { return 'winget' }
+    if (Get-Command 'choco'  -ErrorAction SilentlyContinue) { return 'choco'  }
+    return $null
+}
+
+function Install-Tool {
+    param(
+        [string]$Command,
+        [string]$InstallUrl
+    )
+    $pm = Get-InstallManager
+    if (-not $pm) {
+        Write-Info "No supported package manager (winget/choco) found. Please install '$Command' manually from: $InstallUrl"
+        return $false
+    }
+    $yn = Read-Host "       Would you like to install '$Command' now? [y/N]"
+    if ($yn -notmatch '^[Yy]') { return $false }
+
+    $wingetId = switch ($Command) {
+        'git'     { 'Git.Git' }
+        'docker'  { 'Docker.DockerDesktop' }
+        'python'  { 'Python.Python.3.11' }
+        'python3' { 'Python.Python.3.11' }
+        default   { $null }
+    }
+    $chocoPkg = switch ($Command) {
+        'git'     { 'git' }
+        'docker'  { 'docker-desktop' }
+        'python'  { 'python' }
+        'python3' { 'python' }
+        default   { $null }
+    }
+
+    Write-Info "Installing '$Command' via $pm …"
+    if ($pm -eq 'winget' -and $wingetId) {
+        & winget install --id $wingetId -e --source winget | Out-Host
+        return ($LASTEXITCODE -eq 0)
+    } elseif ($pm -eq 'choco' -and $chocoPkg) {
+        & choco install $chocoPkg -y | Out-Host
+        return ($LASTEXITCODE -eq 0)
+    } else {
+        Write-Info "No auto-install recipe for '$Command'. Please install it manually from: $InstallUrl"
+        return $false
+    }
+}
+
 function Assert-Command {
     param(
         [string]$Command,
@@ -54,7 +101,18 @@ function Assert-Command {
     if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) {
         Write-Err "'$Command' is not installed or not on PATH."
         Write-Host "       Install it from: $InstallUrl" -ForegroundColor Gray
-        exit 1
+        $installed = Install-Tool -Command $Command -InstallUrl $InstallUrl
+        if (-not $installed) {
+            exit 1
+        }
+        # Refresh PATH so newly installed tools are discoverable
+        $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
+                    [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+        if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) {
+            Write-Err "Installation of '$Command' failed. Please install it manually from: $InstallUrl"
+            exit 1
+        }
+        Write-Success "'$Command' installed successfully."
     }
     Write-Success "$Command is available ($(( Get-Command $Command ).Source))"
 }
@@ -188,13 +246,28 @@ if ($Mode -ieq 'Dev') {
     Assert-Command 'git'    'https://git-scm.com/downloads'
     Assert-Command 'docker' 'https://docs.docker.com/get-docker/'
     # Accept 'python' or 'python3'
-    $pythonCmd = if (Get-Command 'python3' -ErrorAction SilentlyContinue) { 'python3' }
-                 elseif (Get-Command 'python' -ErrorAction SilentlyContinue) { 'python' }
-                 else {
-                     Write-Err "'python' is not installed or not on PATH."
-                     Write-Host "       Install it from: https://www.python.org/downloads/" -ForegroundColor Gray
-                     exit 1
-                 }
+    $pythonCmd = $null
+    if (Get-Command 'python3' -ErrorAction SilentlyContinue) {
+        $pythonCmd = 'python3'
+    } elseif (Get-Command 'python' -ErrorAction SilentlyContinue) {
+        $pythonCmd = 'python'
+    } else {
+        Write-Err "'python' is not installed or not on PATH."
+        Write-Host "       Install it from: https://www.python.org/downloads/" -ForegroundColor Gray
+        $installed = Install-Tool -Command 'python' -InstallUrl 'https://www.python.org/downloads/'
+        if (-not $installed) { exit 1 }
+        # Refresh PATH
+        $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
+                    [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+        if (Get-Command 'python3' -ErrorAction SilentlyContinue) {
+            $pythonCmd = 'python3'
+        } elseif (Get-Command 'python' -ErrorAction SilentlyContinue) {
+            $pythonCmd = 'python'
+        } else {
+            Write-Err "Installation of 'python' failed. Please install it manually from: https://www.python.org/downloads/"
+            exit 1
+        }
+    }
     Write-Success "$pythonCmd is available"
 
     # Verify Python >= 3.11

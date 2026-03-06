@@ -27,11 +27,68 @@ error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
 step()    { echo -e "\n${BOLD}==> $*${RESET}"; }
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
+# Detect the available system package manager.
+_pkg_manager() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        command -v brew &>/dev/null && echo "brew" || echo ""
+    elif command -v apt-get &>/dev/null; then echo "apt"
+    elif command -v dnf     &>/dev/null; then echo "dnf"
+    elif command -v yum     &>/dev/null; then echo "yum"
+    else echo ""
+    fi
+}
+
+# Attempt to install a tool using the detected package manager.
+# Returns non-zero if the tool could not be installed.
+_try_install() {
+    local tool="$1" pm="$2"
+    case "$pm" in
+        brew)
+            case "$tool" in
+                docker)  brew install --cask docker ;;
+                python3) brew install python ;;
+                *)       brew install "$tool" ;;
+            esac ;;
+        apt)
+            case "$tool" in
+                docker)  sudo apt-get install -y docker.io ;;
+                *)       sudo apt-get install -y "$tool" ;;
+            esac ;;
+        dnf)  sudo dnf install -y "$tool" ;;
+        yum)  sudo yum install -y "$tool" ;;
+        *)    return 1 ;;
+    esac
+}
+
 require() {
     if ! command -v "$1" &>/dev/null; then
         error "'$1' is not installed or not on PATH."
         echo "       Install it from: $2"
-        exit 1
+        local pm
+        pm="$(_pkg_manager)"
+        if [ -n "$pm" ]; then
+            local _ans=""
+            read -rp "       Would you like to install '$1' now? [y/N]: " _ans </dev/tty || true
+            if [[ "$_ans" =~ ^[Yy] ]]; then
+                info "Installing '$1' via $pm …"
+                if _try_install "$1" "$pm"; then
+                    if command -v "$1" &>/dev/null; then
+                        success "'$1' installed successfully."
+                    else
+                        error "Installation of '$1' failed. Please install it manually from: $2"
+                        exit 1
+                    fi
+                else
+                    error "Installation of '$1' failed. Please install it manually from: $2"
+                    exit 1
+                fi
+            else
+                exit 1
+            fi
+        else
+            exit 1
+        fi
     fi
     success "$1 is available ($(command -v "$1"))"
 }
