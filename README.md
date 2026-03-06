@@ -299,6 +299,27 @@ Full interactive docs available at `http://localhost:8000/docs` when running.
 
 > For a detailed walkthrough (including first-use workflow and troubleshooting), see the **[Onboarding Guide](ONBOARDING.md)**.
 
+### One-Click Onboarding Scripts
+
+The fastest way to get started on any OS — the scripts handle every step automatically.
+
+```bash
+# Linux / macOS
+git clone https://github.com/Alegruz/Scheduler.git && cd Scheduler
+chmod +x scripts/onboard.sh && ./scripts/onboard.sh
+
+# Windows CMD
+git clone https://github.com/Alegruz/Scheduler.git && cd Scheduler
+scripts\onboard.bat
+
+# Windows PowerShell
+git clone https://github.com/Alegruz/Scheduler.git; cd Scheduler
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\onboard.ps1
+```
+
+Each script offers an interactive menu to choose **Docker mode** (user) or **Dev mode** (developer), or you can pass a flag directly (`--docker` / `--dev` on Bash/CMD; `-Mode Docker` / `-Mode Dev` on PowerShell). See the **[Onboarding Guide](ONBOARDING.md#one-click-onboarding-scripts)** for full details.
+
 ### Quick Start with Docker
 
 ```bash

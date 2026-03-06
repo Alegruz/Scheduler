@@ -7,11 +7,12 @@ Welcome to **Life Scheduler**! This guide will get you up and running whether yo
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Using the Application](#using-the-application)
+2. [One-Click Onboarding Scripts](#one-click-onboarding-scripts)
+3. [Using the Application](#using-the-application)
    - [Quick Start with Docker](#quick-start-with-docker)
    - [Verify the Installation](#verify-the-installation)
    - [Your First Schedule](#your-first-schedule)
-3. [Developing the Application](#developing-the-application)
+4. [Developing the Application](#developing-the-application)
    - [Development Prerequisites](#development-prerequisites)
    - [Clone and Set Up the Repository](#clone-and-set-up-the-repository)
    - [Configure Environment Variables](#configure-environment-variables)
@@ -20,7 +21,80 @@ Welcome to **Life Scheduler**! This guide will get you up and running whether yo
    - [Run the Tests](#run-the-tests)
    - [Project Structure](#project-structure)
    - [Making Your First Contribution](#making-your-first-contribution)
-4. [Troubleshooting](#troubleshooting)
+5. [Troubleshooting](#troubleshooting)
+
+---
+
+## One-Click Onboarding Scripts
+
+The `scripts/` directory contains ready-made onboarding scripts for every major platform.
+Each script supports two modes:
+
+| Mode | Description | Prerequisites |
+|------|-------------|---------------|
+| **Docker** | Full stack via Docker Compose — no Python needed | Git, Docker & Docker Compose |
+| **Dev** | Local Python development environment | Git, Docker (for DB), Python 3.11+ |
+
+### Linux / macOS — Bash (`onboard.sh`)
+
+```bash
+# Clone the repository first
+git clone https://github.com/Alegruz/Scheduler.git
+cd Scheduler
+
+# Make the script executable (first time only)
+chmod +x scripts/onboard.sh
+
+# Interactive menu (asks Docker vs. Dev)
+./scripts/onboard.sh
+
+# Or choose directly:
+./scripts/onboard.sh --docker   # Docker / user mode
+./scripts/onboard.sh --dev      # Local developer mode
+./scripts/onboard.sh --help     # Show usage
+```
+
+### Windows — Command Prompt (`onboard.bat`)
+
+```bat
+:: Clone the repository first
+git clone https://github.com/Alegruz/Scheduler.git
+cd Scheduler
+
+:: Interactive menu
+scripts\onboard.bat
+
+:: Or choose directly:
+scripts\onboard.bat --docker
+scripts\onboard.bat --dev
+scripts\onboard.bat --help
+```
+
+### Windows — PowerShell (`onboard.ps1`)
+
+```powershell
+# Clone the repository first
+git clone https://github.com/Alegruz/Scheduler.git
+cd Scheduler
+
+# Allow script execution for this session (if needed)
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Interactive menu
+.\scripts\onboard.ps1
+
+# Or choose directly:
+.\scripts\onboard.ps1 -Mode Docker
+.\scripts\onboard.ps1 -Mode Dev
+```
+
+> **What the scripts do (Dev mode)**
+> 1. Start PostgreSQL via `docker compose up -d db`
+> 2. Create a Python virtual environment (`backend/.venv`)
+> 3. Install all dependencies with `pip install -e ".[dev]"`
+> 4. Copy `backend/.env.example` → `backend/.env` and generate a random `SECRET_KEY`
+> 5. Run `alembic upgrade head` to apply all database migrations
+> 6. Launch `uvicorn app.main:app --reload --port 8000`
 
 ---
 
