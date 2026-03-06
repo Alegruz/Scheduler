@@ -247,10 +247,56 @@ where %~1 >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo %ERR% '%~1' is not installed or not on PATH.
     echo        Install it from: %~2
-    exit /b 1
+    call :try_install "%~1" "%~2"
+    if !ERRORLEVEL! neq 0 exit /b 1
+    where %~1 >nul 2>&1
+    if !ERRORLEVEL! neq 0 (
+        echo %ERR% Installation of '%~1' failed. Please install it manually from: %~2
+        exit /b 1
+    )
+    echo %OK% '%~1' installed successfully.
 )
 echo %OK% %~1 is available
 exit /b 0
+
+:try_install
+:: Usage: call :try_install <command> <install-url>
+set "_TOOL=%~1"
+set "_URL=%~2"
+set "_PM="
+where winget >nul 2>&1
+if %ERRORLEVEL%==0 set "_PM=winget"
+if "!_PM!"=="" (
+    where choco >nul 2>&1
+    if %ERRORLEVEL%==0 set "_PM=choco"
+)
+if "!_PM!"=="" (
+    echo        No supported package manager found. Please install '!_TOOL!' manually from: !_URL!
+    exit /b 1
+)
+set /p "_ANS=       Would you like to install '!_TOOL!' now? [y/N]: "
+set "_DO_INSTALL="
+if /i "!_ANS!"=="y"   set "_DO_INSTALL=1"
+if /i "!_ANS!"=="yes" set "_DO_INSTALL=1"
+if "!_DO_INSTALL!"=="" exit /b 1
+set "_PKG="
+if /i "!_TOOL!"=="git"    if "!_PM!"=="winget" set "_PKG=Git.Git"
+if /i "!_TOOL!"=="git"    if "!_PM!"=="choco"  set "_PKG=git"
+if /i "!_TOOL!"=="docker" if "!_PM!"=="winget" set "_PKG=Docker.DockerDesktop"
+if /i "!_TOOL!"=="docker" if "!_PM!"=="choco"  set "_PKG=docker-desktop"
+if /i "!_TOOL!"=="python" if "!_PM!"=="winget" set "_PKG=Python.Python.3.11"
+if /i "!_TOOL!"=="python" if "!_PM!"=="choco"  set "_PKG=python"
+if "!_PKG!"=="" (
+    echo        No auto-install recipe for '!_TOOL!'. Please install it manually from: !_URL!
+    exit /b 1
+)
+echo %INFO% Installing '!_TOOL!' via !_PM! ...
+if "!_PM!"=="winget" (
+    winget install --id !_PKG! -e --source winget
+) else (
+    choco install !_PKG! -y
+)
+exit /b %ERRORLEVEL%
 
 :wait_for_http
 :: Usage: call :wait_for_http <url> <max_seconds>
