@@ -316,8 +316,10 @@ def generate_schedule(
     # Record audit event
     _record_audit(
         db, user_id, AuditEventKind.PLAN_GENERATED,
-        explanation=f"Generated schedule for {target_date}. Score={result.score:.2f}. Feasible={result.is_feasible}. "
-                    f"Violations: {len(result.violations)}",
+        explanation=(
+            f"Generated schedule for {target_date}. Score={result.score:.2f}."
+            f" Feasible={result.is_feasible}. Violations: {len(result.violations)}"
+        ),
         plan_id=plan.id,
         metadata={"score_breakdown": result.score_breakdown, "is_feasible": result.is_feasible},
     )
