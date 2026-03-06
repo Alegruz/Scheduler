@@ -24,6 +24,8 @@ A **policy-driven, deterministic, adaptive life scheduler** that acts like a lif
 11. [MVP Roadmap](#mvp-roadmap)
 12. [Brutal Critique](#brutal-critique)
 
+> **New here?** See the **[Onboarding Guide](ONBOARDING.md)** for step-by-step instructions on how to use or develop this project.
+
 ---
 
 ## Product Vision
@@ -294,6 +296,8 @@ Full interactive docs available at `http://localhost:8000/docs` when running.
 ---
 
 ## Setup & Running
+
+> For a detailed walkthrough (including first-use workflow and troubleshooting), see the **[Onboarding Guide](ONBOARDING.md)**.
 
 ### Quick Start with Docker
 
